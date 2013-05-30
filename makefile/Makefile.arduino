@@ -1,0 +1,64 @@
+ARDUINO_HOME=/usr/share/arduino/
+HEX=$(NAME).hex
+
+CC=avr-g++
+AR=avr-ar rcs
+AVRDUDE=avrdude
+OBJCOPY=avr-objcopy
+CFLAGS=-g -Os -Wall -fno-exceptions -ffunction-sections -fdata-sections -mmcu=atmega328p -DF_CPU=16000000L -DARDUINO=100 -I$(ARDUINO_HOME)/hardware/arduino/cores/arduino -I$(ARDUINO_HOME)/hardware/arduino/variants/standard
+LFLAGS=-Os -Wl,--gc-sections -mmcu=atmega328p
+OFLAGS=-O ihex -R .eeprom 
+UFLAGS=-C/usr/share/arduino/hardware/tools/avrdude.conf -v -v -v -v -patmega328p -carduino -P/dev/ttyACM0 -b115200 -D -Uflash:w:$(HEX):i
+
+CORE_SRCS_DIR=$(ARDUINO_HOME)/hardware/arduino/cores/arduino/
+CORE_SRCS=\
+	WInterrupts.c \
+	wiring_shift.c \
+	wiring.c \
+	wiring_pulse.c \
+	wiring_analog.c \
+	wiring_digital.c
+CORE_OBJS=$(subst .c,.o,$(CORE_SRCS))
+CORE_SRCS_CPP=\
+	Print.cpp \
+	Stream.cpp \
+	WString.cpp \
+	main.cpp \
+	USBCore.cpp \
+	CDC.cpp \
+	IPAddress.cpp \
+	Tone.cpp \
+	HID.cpp \
+	WMath.cpp \
+	HardwareSerial.cpp \
+	new.cpp
+CORE_OBJS_CPP=$(subst .cpp,.o,$(CORE_SRCS_CPP))
+CORE_LIB=core.a
+
+OBJS=$(subst .c,.o,$(SRCS))
+ELFS=$(subst .c,.elf,$(SRCS))
+
+all: $(HEX)
+
+$(CORE_LIB): $(CORE_OBJS) $(CORE_OBJS_CPP)
+	$(AR) $(CORE_LIB) $(CORE_OBJS) $(CORE_OBJS_CPP)
+
+$(CORE_OBJS): %.o: $(CORE_SRCS_DIR)/%.c
+	$(CC) $(CFLAGS) $< -c -o $@
+$(CORE_OBJS_CPP): %.o: $(CORE_SRCS_DIR)/%.cpp
+	$(CC) $(CFLAGS) $< -c -o $@
+
+$(OBJS): %.o: %.c
+	$(CC) $(CFLAGS) $< -c -o $@
+
+$(ELFS): %.elf: %.o $(CORE_LIB)
+	$(CC) $(LFLAGS) -o $@ $< $(CORE_LIB) -lm
+
+$(HEX): $(ELFS)
+	$(OBJCOPY) $(OFLAGS) $(ELFS) $(HEX) 
+
+clean-arduino:
+	rm -f $(HEX) $(ELFS) $(OBJS) $(CORE_LIB) $(CORE_OBJS) $(CORE_OBJS_CPP)
+
+upload-arduino: $(HEX)
+	$(AVRDUDE) $(UFLAGS)

@@ -1,0 +1,14 @@
+NAME=AtomLED
+HS=blink.hs
+SRCS=AtomLED.c
+INCLUDES=AtomLED.h
+
+include Makefile.arduino
+
+$(SRCS): $(HS)
+	runhaskell $(HS)
+
+clean: clean-arduino
+	rm -f $(SRCS) $(INCLUDES)
+
+upload: upload-arduino
