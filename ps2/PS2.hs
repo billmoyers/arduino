@@ -4,18 +4,32 @@ import Data.Word
 import Data.Bits
 import GHC.Int
 
+data Key = Key { name :: String, press :: [Int8], release :: [Int8] }
+
+del = Key { name = "DEL", press = [0xE0, 0x71], release = [0xE0, 0xF0, 0x71] }
+
 maxScanCodeLenBytes = 8 :: Int
 sendFrameSizeBits = 11 :: Int
 
 device :: Int -> Atom ()
-device period' = do
+device systemClockSpeed = do
+	--Operate w/ a 16KHz clock signal.
+	let arbitrary = 15
+	let period' = systemClockSpeed `quot` (16000*2*arbitrary)
+
+	--Setup periods.
 	let clkPeriod = period'
 	let clkPhase = 0
 	let datPeriod = clkPeriod * 2
 	let datPhase = clkPeriod `quot` 2
 	let inputPeriod = clkPeriod `quot` 2
 
-	let scanCodes' = [0 | i <- [1 .. maxScanCodeLenBytes]] :: [Word8]
+	--Setup keyboard scan code lookups.
+	pressScanCode <- array "pressScanCode" (press del)
+	releaseScanCode <- array "releaseScanCode" (release del)
+
+	--Setup variables.
+	let scanCodes' = [0 | i <- [1 .. maxScanCodeLenBytes]] :: [Int8]
 	let datSignal' = [False | i <- [1 .. (length scanCodes') * sendFrameSizeBits]]
 
 	scanCodes <- array "scanCodes" scanCodes'

@@ -15,4 +15,8 @@ clean: clean-arduino
 
 upload: upload-arduino
 
-test: test-arduino
+stty:
+	stty -F $(SERIALDEV) cs8 115200 ignbrk -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts 
+
+test: stty test-arduino
+
