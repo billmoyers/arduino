@@ -1,5 +1,6 @@
 ARDUINO_HOME=/usr/share/arduino/
 HEX=$(NAME).hex
+SERIALDEV=/dev/ttyACM0
 
 CC=avr-g++
 AR=avr-ar rcs
@@ -8,7 +9,7 @@ OBJCOPY=avr-objcopy
 CFLAGS=-g -Os -Wall -fno-exceptions -ffunction-sections -fdata-sections -mmcu=atmega328p -DF_CPU=16000000L -DARDUINO=100 -I$(ARDUINO_HOME)/hardware/arduino/cores/arduino -I$(ARDUINO_HOME)/hardware/arduino/variants/standard
 LFLAGS=-Os -Wl,--gc-sections -mmcu=atmega328p
 OFLAGS=-O ihex -R .eeprom 
-UFLAGS=-C/usr/share/arduino/hardware/tools/avrdude.conf -v -v -v -v -patmega328p -carduino -P/dev/ttyACM0 -b115200 -D -Uflash:w:$(HEX):i
+UFLAGS=-C/usr/share/arduino/hardware/tools/avrdude.conf -v -v -v -v -patmega328p -carduino -P$(SERIALDEV) -b115200 -D -Uflash:w:$(HEX):i
 
 CORE_SRCS_DIR=$(ARDUINO_HOME)/hardware/arduino/cores/arduino/
 CORE_SRCS=\
@@ -62,3 +63,6 @@ clean-arduino:
 
 upload-arduino: $(HEX)
 	$(AVRDUDE) $(UFLAGS)
+
+test-arduino: upload-arduino
+	cat <$(SERIALDEV)
